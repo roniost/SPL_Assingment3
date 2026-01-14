@@ -7,7 +7,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     //use to send messages to specific clients.
     private final ConcurrentHashMap<Integer, ConnectionHandler<T>> activeConnections = new ConcurrentHashMap<>();
     //use this to broadcast messages to a topic.
-    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<Integer>> channelSubscribers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentHashMap<Integer, Integer>> channelSubscribers = new ConcurrentHashMap<>();
     //This is a helper map to efficiently handle UNSUBSCRIBE requests.
     private final ConcurrentHashMap<Integer, ConcurrentHashMap<Integer, String>> clientSubscriptions = new ConcurrentHashMap<>();
 
@@ -23,11 +23,16 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     @Override
     public void send(String channel, T msg) {
-        ConcurrentLinkedQueue<Integer> subscribers = channelSubscribers.get(channel);
+        ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
         if (subscribers!=null) {    
-            for(Integer connectionID:subscribers){
-                if (activeConnections.containsKey(connectionID)) {
-                    send(connectionID, msg);
+            for(Integer connectionID:subscribers.keySet()){
+                ConnectionHandler<T> handler = activeConnections.get(connectionID);
+                if (handler != null) {
+                    Integer subscriptionId = subscribers.get(connectionID);
+
+                    String originalMsg = (String) msg;
+                    String modifiedMsg = originalMsg.replaceFirst("subscription:.", "subscription:" + subscriptionId);
+                    send( (int)connectionID, (T) modifiedMsg); //why vs code is stupid
                 }
             }
         }
@@ -40,7 +45,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
         ConcurrentHashMap<Integer, String> subscriptions = clientSubscriptions.remove(connectionId);
         if (subscriptions != null) {
             for (String channel : subscriptions.values()) {
-                ConcurrentLinkedQueue<Integer> subscribers = channelSubscribers.get(channel);
+                ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers!=null) {
                     subscribers.remove(connectionId);
                 }
@@ -55,8 +60,11 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     //needed???
     public void subscribe(int connectionId, String channel, int subscriptionId) {
-        channelSubscribers.computeIfAbsent(channel, k -> new ConcurrentLinkedQueue<>()).add(connectionId);
-        clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
+        channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
+        channelSubscribers.get(channel).put(connectionId, subscriptionId);  
+        
+        clientSubscriptions.putIfAbsent(connectionId, new ConcurrentHashMap<>());
+        clientSubscriptions.get(connectionId).put(subscriptionId, channel);    
     }
 
     public void unsubscribe(int subscriptionId, int connectionId) {
@@ -64,7 +72,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
         if (userSubs != null) {
             String channel = userSubs.remove(subscriptionId);
             if (channel != null) {
-                ConcurrentLinkedQueue<Integer> subscribers = channelSubscribers.get(channel);
+                ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers != null) {
                     subscribers.remove(connectionId);
                 }
