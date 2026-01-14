@@ -2,6 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
+import bgu.spl.net.api.StompMessagingProtocol; // ADDED
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
@@ -22,6 +23,9 @@ public class Reactor<T> implements Server<T> {
 
     private Thread selectorThread;
     private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
+
+    private final ConnectionsImpl<T> connections = new ConnectionsImpl<>();// ADDED
+    private int connectionIdCounter = 0;// ADDED
 
     public Reactor(
             int numThreads,
@@ -95,11 +99,20 @@ public class Reactor<T> implements Server<T> {
     private void handleAccept(ServerSocketChannel serverChan, Selector selector) throws IOException {
         SocketChannel clientChan = serverChan.accept();
         clientChan.configureBlocking(false);
+
+        MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
+        StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol; // ADDED
+
         final NonBlockingConnectionHandler<T> handler = new NonBlockingConnectionHandler<>(
                 readerFactory.get(),
-                protocolFactory.get(),
+                stompProtocol,
                 clientChan,
                 this);
+        
+        int connectionId = connectionIdCounter++;// ADDED
+        connections.addConnection(connectionId, handler); // ADDED
+        stompProtocol.start(connectionId, connections); // ADDED
+        
         clientChan.register(selector, SelectionKey.OP_READ, handler);
     }
 

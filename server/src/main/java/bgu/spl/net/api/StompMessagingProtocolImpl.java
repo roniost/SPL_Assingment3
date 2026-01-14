@@ -140,6 +140,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         String messageFrame = "MESSAGE\n" +
                               "destination:" + destination + "\n" +
                               "message-id:" + java.util.UUID.randomUUID().toString() + "\n" +
+                              "subscription:.\n" +
                               // "subscription:???" -> This is the hard part with generic broadcast
                               "\n" + 
                               body;
