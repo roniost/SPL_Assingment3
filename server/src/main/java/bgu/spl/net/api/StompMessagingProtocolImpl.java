@@ -1,4 +1,4 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.api;
 
 import bgu.spl.net.api.StompMessagingProtocol;
 import bgu.spl.net.srv.Connections;
