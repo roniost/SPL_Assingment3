@@ -10,7 +10,7 @@
 
 StompProtocol::StompProtocol():username(""),isConnected(false) {}
 
-// client requests
+// client -> server
 bool StompProtocol::Login(std::string username) {
     if(isConnected)
         //throw std::runtime_error("already connected");
@@ -60,6 +60,97 @@ bool StompProtocol::Exit(int subId) {
     subIdToGame.erase(subId);
     gameData.erase(gameName);
     return true;
+}
+
+std::vector<std::string> StompProtocol::Report(std::string filePath) {
+    if(!isConnected)
+        throw std::runtime_error("not connected to server");
+    names_and_events input = parseEventsFile(filePath);
+    std::string gameName = input.team_a_name + "_" + input.team_b_name;
+    std::vector<std::string> out;
+
+    for(Event event : input.events) {
+        std::string msg = "";
+        msg.append("SEND\n").append("destination:/" + gameName + "\n\n");
+        msg.append("user: " + username + "\n");
+        msg.append(event.toString() + "\n\0");
+        out.push_back(msg);
+    }
+
+    return out;
+}
+
+// client -> self
+std::string StompProtocol::Summery(std::string gameName, std::string user) {
+    if(!isSubTo(gameName))
+        throw std::invalid_argument("not subscribed to game");
+    gameState game = gameData[gameName][user];
+    if(game.events.size()==0)
+        throw std::invalid_argument("no existing reports from this user");
+    
+    std::string out = "";
+    out.append(game.teamA + " vs " + game.teamB + "\n");
+    out.append("Game stats:\n");
+    
+    out.append("General stats:\n");
+    for(auto pair : game.generalStats)
+        out.append(pair.first + ": " + pair.second + "\n");
+
+    out.append("\n" + game.teamA + " stats:\n");
+    for(auto pair : game.team_a_stats)
+        out.append(pair.first + ": " + pair.second + "\n");
+
+    out.append("\n" + game.teamB + " stats:\n");
+    for(auto pair : game.team_b_stats)
+        out.append(pair.first + ": " + pair.second + "\n");
+    
+    out.append("\nGame event reports:");
+    for(Event event : game.events)
+        out.append("\n" + std::to_string(event.get_time()) + " - " + event.get_name() + ":\n\n" + event.get_discription() + "\n\n");
+
+    return out;
+}
+
+bool StompProtocol::prossesEvent(Event event, std::string& user) {
+    std::string gameName = event.get_team_a_name() + "_" + event.get_team_b_name();
+    if(!gameToSubId.count(gameName)) {
+        return false; // not subscribed to game
+    }
+
+    if(!gameData.count(gameName) || !gameData[gameName].count(user)) {
+        gameState state;
+        state.teamA = event.get_team_a_name();
+        state.teamB = event.get_team_b_name();
+        state.generalStats = event.get_game_updates();
+        state.team_a_stats = event.get_team_a_updates();
+        state.team_b_stats = event.get_team_b_updates(); 
+        state.events.insert(event);
+        if(!gameData.count(gameName)) {
+            std::map<std::string, gameState> newMap;
+            newMap[user] = state;
+            gameData[gameName] = newMap;
+        }
+        else {
+            gameData[gameName][user] = state;
+        }
+        return true;
+    }
+    else {
+        for(auto pair : event.get_game_updates()) {
+            std::string key = pair.first;
+            gameData[gameName][user].generalStats[key] = pair.second;
+        }
+        for(auto pair : event.get_team_a_updates()) {
+            std::string key = pair.first;
+            gameData[gameName][user].team_a_stats[key] = pair.second;
+        }
+        for(auto pair : event.get_team_b_updates()) {
+            std::string key = pair.first;
+            gameData[gameName][user].team_b_stats[key] = pair.second;
+        }
+        gameData[gameName][user].events.insert(event);
+        return true;
+    }
 }
 
 // server -> client
@@ -129,6 +220,8 @@ Event StompProtocol::frameToEvent(std::string frame) {
             currentUpdateMap = &teamBUpdates;
         }
         else {
+            while(key[0]==' ')
+                key.substr(1);
             // If it's none of the main headers it belongs to the currently active map
             (*currentUpdateMap)[key] = value;
         }
@@ -153,53 +246,14 @@ bool StompProtocol::prossesFrame(std::string frame) {
             break;
         }
     }
-
-    std::string gameName = newEvent.get_team_a_name() + "_" + newEvent.get_team_b_name();
-    if(!gameToSubId.count(gameName)) {
-        return false; // not subscribed to game
-    }
-    
-    if(!gameData.count(gameName) || !gameData[gameName].count(user)) {
-        gameState state;
-        state.teamA = newEvent.get_team_a_name();
-        state.teamB = newEvent.get_team_b_name();
-        state.generalStats = newEvent.get_game_updates();
-        state.team_a_stats = newEvent.get_team_a_updates();
-        state.team_b_stats = newEvent.get_team_b_updates(); 
-        state.events.push_back(newEvent);
-        if(!gameData.count(gameName)) {
-            std::map<std::string, gameState> newMap;
-            newMap[user] = state;
-            gameData[gameName] = newMap;
-        }
-        else {
-            gameData[gameName][user] = state;
-        }
-        return true;
-    }
-    else {
-        for(auto pair : newEvent.get_game_updates()) {
-            std::string key = pair.first;
-            gameData[gameName][user].generalStats[key] = pair.second;
-        }
-        for(auto pair : newEvent.get_team_a_updates()) {
-            std::string key = pair.first;
-            gameData[gameName][user].team_a_stats[key] = pair.second;
-        }
-        for(auto pair : newEvent.get_team_b_updates()) {
-            std::string key = pair.first;
-            gameData[gameName][user].team_b_stats[key] = pair.second;
-        }
-        gameData[gameName][user].events.push_back(newEvent);
-        return true;
-    }
+    this->prossesEvent(newEvent, user);
 }
 
 // getters
-bool StompProtocol::isSubTo(std::string gameName) {
+bool StompProtocol::isSubTo(std::string gameName) const{
     return !!gameToSubId.count(gameName);
 }
 
-bool StompProtocol::isSubTo(int subId) {
+bool StompProtocol::isSubTo(int subId) const{
     return !!subIdToGame.count(subId);
 }

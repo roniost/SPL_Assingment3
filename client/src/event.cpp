@@ -65,10 +65,44 @@ Event::Event(const std::string &frame_body) : team_a_name(""), team_b_name(""), 
 {
 }
 
+// comparator for set in stomp protocol
+bool Event::operator<(const Event& other) const{
+    bool thisBeforeHT = this->game_updates.at("before halftime")=="true";
+    bool otherBeforeHT = other.game_updates.at("before halftime")=="true";
+    if(thisBeforeHT!=otherBeforeHT)
+        return thisBeforeHT>otherBeforeHT;
+    return this->get_time()<other.get_time();
+}
+
+// to string for report
+std::string Event::toString() const{
+    std::string out = "";
+    out.append("team a: " + this->get_team_a_name() + "\n");
+    out.append("team b: " + this->get_team_b_name() + "\n");
+    out.append("event name: " + this->get_name() + "\n");
+    out.append("time: " + std::to_string(this->get_time()) + "\n");
+    out.append("general game updates:\n");
+    for(auto pair : this->get_game_updates()) {
+        out.append("    " + pair.first + ": " + pair.second + "\n");
+    }
+    out.append("team a updates:\n");
+    for(auto pair : this->get_team_a_updates()) {
+        out.append("    " + pair.first + ": " + pair.second + "\n");
+    }
+    out.append("team b updates:\n");
+    for(auto pair : this->get_team_b_updates()) {
+        out.append("    " + pair.first + ": " + pair.second + "\n");
+    }
+    out.append("description: " + this->get_discription() + "\n");
+    return out;
+}
+
 names_and_events parseEventsFile(std::string json_path)
 {
     std::ifstream f(json_path);
     json data = json::parse(f);
+
+    std::string beforeHT = "true";
 
     std::string team_a_name = data["team a"];
     std::string team_b_name = data["team b"];
@@ -85,11 +119,22 @@ names_and_events parseEventsFile(std::string json_path)
         std::map<std::string, std::string> team_b_updates;
         for (auto &update : event["general game updates"].items())
         {
+            // check of current time compare to halftime
+            if(update.key()=="before halftime") {
+                if(update.value().is_string())
+                    beforeHT = update.value();
+                else
+                    beforeHT = update.value().dump();
+            }
             if (update.value().is_string())
                 game_updates[update.key()] = update.value();
             else
                 game_updates[update.key()] = update.value().dump();
         }
+
+        //force index before halftime to any event
+        if(!game_updates.count("before halftime"))
+            game_updates["before halftime"] = beforeHT;
 
         for (auto &update : event["team a updates"].items())
         {

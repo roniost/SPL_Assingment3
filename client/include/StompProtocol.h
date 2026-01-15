@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <mutex>
+#include <set>
 
 // TODO: implement the STOMP protocol
 class StompProtocol
@@ -16,7 +17,7 @@ class StompProtocol
         std::map<std::string, std::string> generalStats;
         std::map<std::string, std::string> team_a_stats;
         std::map<std::string, std::string> team_b_stats;
-        std::vector<Event> events;
+        std::set<Event> events;
 
         gameState():teamA(""), teamB(""), generalStats({}), team_a_stats({}), team_b_stats({}), events() {}
     };
@@ -32,7 +33,8 @@ private:
     // game -> user -> events
     std::map<std::string, std::map<std::string, gameState>> gameData;
 
-    std::vector<std::string> splitFrame(const std::string& frame, char delimiter);
+    //std::vector<std::string> splitFrame(const std::string& frame, char delimiter);
+    Event frameToEvent(std::string frame);
 public:
 
     // consturcotr
@@ -47,15 +49,16 @@ public:
     std::vector<std::string> Report(std::string filePath);
 
     //client->self
-    bool Summery(std::string gameName, std::string user, std::string filePath);
+    std::string Summery(std::string gameName, std::string user);
+    bool prossesEvent(Event event, std::string& user);
 
     //server->client
-    Event frameToEvent(std::string frame);
     bool prossesFrame(std::string frame);
 
+
     // geters (no need for setters)
-    bool getConnected(){return isConnected;}
-    bool isSubTo(std::string gameName);
-    bool isSubTo(int subId);
+    bool getConnected() const {return isConnected;}
+    bool isSubTo(std::string gameName) const;
+    bool isSubTo(int subId) const;
     //bool getAction(int reciptId);
 };
