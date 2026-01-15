@@ -1,4 +1,4 @@
-package bgu.spl.net.api;
+package bgu.spl.net.impl.stomp;
 
 import bgu.spl.net.api.StompMessagingProtocol;
 import bgu.spl.net.srv.Connections;
@@ -6,6 +6,7 @@ import bgu.spl.net.srv.ConnectionsImpl;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 public class StompMessagingProtocolImpl implements StompMessagingProtocol<String> {
     

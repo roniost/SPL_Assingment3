@@ -2,6 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
+import bgu.spl.net.api.StompMessagingProtocol; // ADDED
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,6 +14,9 @@ public abstract class BaseServer<T> implements Server<T> {
     private final Supplier<MessagingProtocol<T>> protocolFactory;
     private final Supplier<MessageEncoderDecoder<T>> encdecFactory;
     private ServerSocket sock;
+
+    private final ConnectionsImpl<T> connections = new ConnectionsImpl<>(); // ADDED
+    private int connectionIdCounter = 0; // ADDED
 
     public BaseServer(
             int port,
@@ -36,13 +40,25 @@ public abstract class BaseServer<T> implements Server<T> {
             while (!Thread.currentThread().isInterrupted()) {
 
                 Socket clientSock = serverSock.accept();
+                System.out.println("DEBUG 1: Client accepted via TCP");
+
+                MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
+                StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol; // ADDED
 
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(
                         clientSock,
                         encdecFactory.get(),
-                        protocolFactory.get());
+                        stompProtocol); // CHANGED
+                System.out.println("DEBUG 2: Handler created");
+
+                int connectionId = connectionIdCounter++; // ADDED
+                connections.addConnection(connectionId, handler); // ADDED
+                System.out.println("DEBUG 3: Before protocol start");
+                stompProtocol.start(connectionId, connections); // ADDED
+                System.out.println("DEBUG 4: After protocol start");
 
                 execute(handler);
+                System.out.println("DEBUG 5: Execute called");
             }
         } catch (IOException ex) {
         }
