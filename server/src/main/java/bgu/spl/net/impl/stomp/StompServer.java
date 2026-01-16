@@ -6,7 +6,6 @@ import bgu.spl.net.srv.Connections;
 import bgu.spl.net.srv.Server;
 import bgu.spl.net.api.MessageEncoderDecoder; 
 import bgu.spl.net.api.MessagingProtocol;
-import bgu.spl.net.api.StompMessagingProtocol;
 
 
 public class StompServer {
