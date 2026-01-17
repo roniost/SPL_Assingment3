@@ -13,6 +13,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<String>
     @Override
     public String decodeNextByte(byte nextByte) {
         if (nextByte == '\u0000') {
+            System.out.println("DEBUG ENCDEC: Found NULL BYTE! Flushing string."); 
             String result = new String(bytes, 0, len, StandardCharsets.UTF_8);
             len = 0;
             return result; // return the decoded message
@@ -27,7 +28,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<String>
 
     @Override
     public byte[] encode(String message) {
-        //return (message + '\u0000').getBytes(StandardCharsets.UTF_8);
-        return (message).getBytes(StandardCharsets.UTF_8);
+        return (message + '\u0000').getBytes(StandardCharsets.UTF_8);
+        //return (message).getBytes(StandardCharsets.UTF_8);
     }
 }

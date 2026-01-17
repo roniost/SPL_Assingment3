@@ -3,7 +3,7 @@ package bgu.spl.net.srv;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ConnectionsImpl<T> implements Connections<T> {
+public class ConnectionsImpl<T>implements Connections<T> {
     //use to send messages to specific clients.
     private final ConcurrentHashMap<Integer, ConnectionHandler<T>> activeConnections = new ConcurrentHashMap<>();
     //use this to broadcast messages to a topic.
@@ -13,6 +13,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     @Override
     public boolean send(int connectionId, T msg) {
+        System.out.println("DEBUG CONNECTIONS: Attempting to send to ID: " + connectionId);
         ConnectionHandler<T> handler = activeConnections.get(connectionId);
         if (handler != null) {
             handler.send(msg);
@@ -31,8 +32,9 @@ public class ConnectionsImpl<T> implements Connections<T> {
                     Integer subscriptionId = subscribers.get(connectionID);
 
                     String originalMsg = (String) msg;
-                    String modifiedMsg = originalMsg.replaceFirst("subscription:.", "subscription:" + subscriptionId);
-                    send( (int)connectionID, (T) modifiedMsg); //why vs code is stupid
+                    String modifiedMsg = originalMsg.replace("subscription:0", "subscription:" + subscriptionId);
+                    handler.send((T) modifiedMsg);
+                    //send( (int)connectionID, (T) modifiedMsg); //why vs code is stupid
                 }
             }
         }
@@ -60,11 +62,15 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     //needed???
     public void subscribe(int connectionId, String channel, int subscriptionId) {
-        channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
+        channelSubscribers.computeIfAbsent(channel, k -> new ConcurrentHashMap<>()).put(connectionId, subscriptionId);
+        clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
+        
+        /*channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
         channelSubscribers.get(channel).put(connectionId, subscriptionId);  
         
         clientSubscriptions.putIfAbsent(connectionId, new ConcurrentHashMap<>());
-        clientSubscriptions.get(connectionId).put(subscriptionId, channel);    
+        clientSubscriptions.get(connectionId).put(subscriptionId, channel);  
+        */  
     }
 
     public void unsubscribe(int subscriptionId, int connectionId) {

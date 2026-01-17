@@ -26,11 +26,12 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     }
 
     @Override
-    public void process(String message) {
+    public String process(String message) {
+        System.out.println("DEBUG PROTOCOL: Processing message:\n" + message); 
         Frame frame = parseFrame(message);
         if (frame==null) {
             sendError("Malformed frame", "Could not parse message");
-            return;
+            return null;
         }
 
         try{
@@ -58,6 +59,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         }catch (Exception e) {
             sendError("Processing Error", e.getMessage());
         }
+        return null;
     }
 
     @Override
@@ -95,7 +97,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
 
         String response = "CONNECTED\n" +
                           "version:1.2\n" +
-                          "\n" + "\u0000";
+                          "\n" + "\n0000";
         connections.send(connectionID, response);
     }
 
@@ -141,7 +143,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         String messageFrame = "MESSAGE\n" +
                               "destination:" + destination + "\n" +
                               "message-id:" + java.util.UUID.randomUUID().toString() + "\n" +
-                              "subscription:.\n" +
+                              "subscription:0\n" +
                               // "subscription:???" -> This is the hard part with generic broadcast
                               "\n" + 
                               body;

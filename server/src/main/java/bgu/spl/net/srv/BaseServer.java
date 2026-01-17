@@ -43,24 +43,45 @@ public abstract class BaseServer<T> implements Server<T> {
                 System.out.println("DEBUG 1: Client accepted via TCP");
 
                 MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
-                StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol; // ADDED
+                if (protocol instanceof StompMessagingProtocol) {
+                    StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol;
+                    int connectionId = connectionIdCounter; // ADDED
+                    connectionIdCounter++; // ADDED
+                    stompProtocol.start(connectionId, connections); // ADDED
+                    
+                }
+                //protocol.start(connectionIdCounter, connections); // ADDED
+                //StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol; // ADDED
 
-                BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(
+                MessagingProtocol<T> adapter = new MessagingProtocol<T>() {
+                    @Override
+                    public T process(T message) {
+                        protocol.process(message);
+                        return null;
+                    }
+
+                    public boolean shouldTerminate() {
+                        return protocol.shouldTerminate();
+                    }
+                };
+                
+                BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<T>(
                         clientSock,
                         encdecFactory.get(),
-                        stompProtocol); // CHANGED
+                        adapter); // CHANGED
                 System.out.println("DEBUG 2: Handler created");
 
                 int connectionId = connectionIdCounter++; // ADDED
                 connections.addConnection(connectionId, handler); // ADDED
                 System.out.println("DEBUG 3: Before protocol start");
-                stompProtocol.start(connectionId, connections); // ADDED
+                //stompProtocol.start(connectionId, connections); // ADDED
                 System.out.println("DEBUG 4: After protocol start");
 
                 execute(handler);
                 System.out.println("DEBUG 5: Execute called");
             }
         } catch (IOException ex) {
+            ex.printStackTrace();
         }
 
         System.out.println("server closed!!!");

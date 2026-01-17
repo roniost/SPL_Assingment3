@@ -9,7 +9,8 @@ import bgu.spl.net.api.MessagingProtocol;
 
 
 public class StompServer {
-
+    
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void main(String[] args) {
         // TODO: implement this
 
@@ -20,9 +21,31 @@ public class StompServer {
         int port = Integer.parseInt(args[0]);
         String serverType = args[1];
         
+        if (serverType.equals("tpc")) {
+            System.out.println("Starting STOMP TPC server on port: " + port);
+            Server.threadPerClient(
+                port,
+                (Supplier) StompMessagingProtocolImpl::new,
+                StompMessageEncoderDecoder::new).serve();
+        }
+        else if (serverType.equals("reactor")) {
+            System.out.println("Starting STOMP Reactor server on port: " + port);
+            Server.reactor(
+                Runtime.getRuntime().availableProcessors(),
+                port,
+                (Supplier) StompMessagingProtocolImpl::new,
+                StompMessageEncoderDecoder::new).serve();
+        }
+        else {
+            System.out.println("Unknown server type: " + serverType);
+        }
+        
+        /* 
         System.out.println("Starting server " +serverType  + " on port:" + port);
-        Supplier<MessagingProtocol<String>> protocolFactory = () -> new ProtocolAdapter(new StompMessagingProtocolImpl());
-        Supplier<MessageEncoderDecoder<String>> encoderFactory = () -> new StompMessageEncoderDecoder();
+        Supplier protocolFactory = () -> new StompMessagingProtocolImpl();
+        Supplier encoderFactory = () -> new StompMessageEncoderDecoder();
+        //Supplier<MessagingProtocol<String>> protocolFactory = () -> new ProtocolAdapter(new StompMessagingProtocolImpl());
+        //Supplier<MessageEncoderDecoder<String>> encoderFactory = () -> new StompMessageEncoderDecoder();
 
         if (serverType.equals("tpc")) {
             Server.threadPerClient(port,protocolFactory,encoderFactory).serve();
@@ -34,11 +57,11 @@ public class StompServer {
         }
         else {
             System.out.println("Unknown server type: " + serverType);
-        }
+        }*/
     }
 
     //helper
-
+/*
     private static class ProtocolAdapter implements MessagingProtocol<String> {
         private final StompMessagingProtocolImpl impl;
 
@@ -60,5 +83,5 @@ public class StompServer {
         public void start(int connectionId, Connections<String> connections) {
             impl.start(connectionId, connections);
         }
-    }
+    }*/
 }

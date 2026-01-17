@@ -13,8 +13,8 @@ import bgu.spl.net.api.StompMessagingProtocol;//ADDED
 
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
-    private final StompMessagingProtocol<T> protocol;//ADDED
-    //private final MessagingProtocol<T> protocol; //ORIGINAL
+    //private final StompMessagingProtocol<T> protocol;//ADDED
+    private final MessagingProtocol<T> protocol; //ORIGINAL
     private final MessageEncoderDecoder<T> encdec;
     private final Socket sock;
     private BufferedInputStream in;
@@ -22,7 +22,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private volatile boolean connected = true;
 
 //public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, MessagingProtocol<T> protocol) { // ORIGINAL
-    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, StompMessagingProtocol<T> protocol) { //ADDED
+    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, MessagingProtocol<T> protocol) { //ADDED
         this.sock = sock;
         this.encdec = reader;
         this.protocol = protocol;
@@ -64,6 +64,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     public void send(T msg) {
         //IMPLEMENT IF NEEDED
         try {
+            System.out.println("DEBUG HANDLER: Sending message to client..."); // <--- הוסף את זה
             if (msg != null) {
                 out.write(encdec.encode(msg));
                 out.flush();
