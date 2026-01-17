@@ -16,9 +16,11 @@ public class ConnectionsImpl<T>implements Connections<T> {
         System.out.println("DEBUG CONNECTIONS: Attempting to send to ID: " + connectionId);
         ConnectionHandler<T> handler = activeConnections.get(connectionId);
         if (handler != null) {
+            System.out.println("DEBUG CONNECTIONS: Found handler for ID: " + connectionId + ", sending message.");
             handler.send(msg);
             return true;
         }
+        System.out.println("DEBUG CONNECTIONS: No handler found for ID: " + connectionId + ", message not sent.");
         return false;
     }
 
@@ -42,6 +44,7 @@ public class ConnectionsImpl<T>implements Connections<T> {
 
     @Override
     public void disconnect(int connectionId) {
+        System.out.println("DEBUG CONNECTIONS: Disconnecting connection ID: " + connectionId);
         activeConnections.remove(connectionId); //remove active
 
         ConcurrentHashMap<Integer, String> subscriptions = clientSubscriptions.remove(connectionId);
@@ -57,6 +60,7 @@ public class ConnectionsImpl<T>implements Connections<T> {
 
     //helper methods
     public void addConnection(int connectionId, ConnectionHandler<T> handler) {
+        System.out.println("DEBUG CONNECTIONS: Adding connection ID: " + connectionId);
         activeConnections.put(connectionId, handler);
     }
 

@@ -42,12 +42,12 @@ public abstract class BaseServer<T> implements Server<T> {
                 Socket clientSock = serverSock.accept();
                 System.out.println("DEBUG 1: Client accepted via TCP");
 
+                int currentId = connectionIdCounter++; // ADDED
                 MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
                 if (protocol instanceof StompMessagingProtocol) {
                     StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol;
-                    int connectionId = connectionIdCounter; // ADDED
                     connectionIdCounter++; // ADDED
-                    stompProtocol.start(connectionId, connections); // ADDED
+                    stompProtocol.start(currentId, connections); // ADDED
                     
                 }
                 //protocol.start(connectionIdCounter, connections); // ADDED
@@ -71,8 +71,7 @@ public abstract class BaseServer<T> implements Server<T> {
                         adapter); // CHANGED
                 System.out.println("DEBUG 2: Handler created");
 
-                int connectionId = connectionIdCounter++; // ADDED
-                connections.addConnection(connectionId, handler); // ADDED
+                connections.addConnection(currentId, handler); // ADDED
                 System.out.println("DEBUG 3: Before protocol start");
                 //stompProtocol.start(connectionId, connections); // ADDED
                 System.out.println("DEBUG 4: After protocol start");
