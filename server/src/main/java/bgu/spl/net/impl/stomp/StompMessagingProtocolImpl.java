@@ -17,7 +17,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private static final ConcurrentHashMap<String, String> userCredentials = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, Boolean> activeUsers = new ConcurrentHashMap<>();
 
-    private String currentUser = null; //not logged in
+    private String currentUser = null; //not logged in --------------------------------
 
     @Override
     public void start(int connectionId, Connections<String> connections) {
@@ -48,7 +48,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                 case "SEND":
                     handleSend(frame); 
                     break;
-
                 case "DISCONNECT":
                     handleDisconnect(frame);
                     break;
@@ -71,13 +70,15 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private void handleConnect(Frame frame) {
         String login = frame.headers.get("login");
         String passcode = frame.headers.get("passcode");
-        String acceptVersion = frame.headers.get("accept-version");
 
         if (login == null || passcode == null) {
             sendError("Missing headers", "CONNECT frame must include login, passcode");
+            shouldTerminate = true;
             return;
         }
         
+        //boolean successfulLogin = connections.addConnection(connectionID, login);
+
         if(activeUsers.containsKey(login) && activeUsers.get(login)) {
             sendError("User already logged in", "User " + login + " is already logged in");
             return;
@@ -97,7 +98,8 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
 
         String response = "CONNECTED\n" +
                           "version:1.2\n" +
-                          "\n" + "\n0000";
+                          "\n" + 
+                          "\n0000";
         connections.send(connectionID, response);
     }
 
@@ -146,7 +148,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                               "subscription:0\n" +
                               // "subscription:???" -> This is the hard part with generic broadcast
                               "\n" + 
-                              body;
+                              body + "\u0000";
         
         connections.send(destination, messageFrame);
         handleReceipt(frame);
@@ -166,7 +168,8 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         if (receiptId != null) {
             String response = "RECEIPT\n" +
                                 "receipt-id:" + receiptId + "\n" + 
-                                "\n";
+                                "\n"
+                                + "\u0000";
             connections.send(connectionID, response);
         }
     }
@@ -175,7 +178,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         String errorFrame = "ERROR\n" +
                             "message:" + message + "\n" +
                             "\n" +
-                            details + "\n";
+                            details + "\n" + "\u0000";
         connections.send(connectionID, errorFrame);
         shouldTerminate = true;
         connections.disconnect(connectionID);

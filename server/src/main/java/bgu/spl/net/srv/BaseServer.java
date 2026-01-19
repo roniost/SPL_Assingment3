@@ -43,25 +43,26 @@ public abstract class BaseServer<T> implements Server<T> {
                 System.out.println("DEBUG 1: Client accepted via TCP");
 
                 int currentId = connectionIdCounter++; // ADDED
-                MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
-                if (protocol instanceof StompMessagingProtocol) {
-                    StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol;
+                //MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
+                StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocolFactory.get(); // ADDED
+                //if (protocol instanceof StompMessagingProtocol) {
+                //    StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol;
                     connectionIdCounter++; // ADDED
                     stompProtocol.start(currentId, connections); // ADDED
                     
-                }
+                //}
                 //protocol.start(connectionIdCounter, connections); // ADDED
                 //StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol; // ADDED
 
                 MessagingProtocol<T> adapter = new MessagingProtocol<T>() {
                     @Override
                     public T process(T message) {
-                        protocol.process(message);
+                        stompProtocol.process(message);
                         return null;
                     }
 
                     public boolean shouldTerminate() {
-                        return protocol.shouldTerminate();
+                        return stompProtocol.shouldTerminate();
                     }
                 };
                 

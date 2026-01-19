@@ -1,7 +1,6 @@
 package bgu.spl.net.srv;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ConnectionsImpl<T>implements Connections<T> {
     //use to send messages to specific clients.
@@ -25,6 +24,7 @@ public class ConnectionsImpl<T>implements Connections<T> {
     }
 
     @Override
+    //netanel did differently. 
     public void send(String channel, T msg) {
         ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
         if (subscribers!=null) {    
@@ -49,6 +49,7 @@ public class ConnectionsImpl<T>implements Connections<T> {
 
         ConcurrentHashMap<Integer, String> subscriptions = clientSubscriptions.remove(connectionId);
         if (subscriptions != null) {
+            send(connectionId, (T)"DISCONNECTING user"); //notify client
             for (String channel : subscriptions.values()) {
                 ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers!=null) {
@@ -59,25 +60,29 @@ public class ConnectionsImpl<T>implements Connections<T> {
     }
 
     //helper methods
-    public void addConnection(int connectionId, ConnectionHandler<T> handler) {
+    public void addConnection(int connectionId, ConnectionHandler<T> handler) { 
         System.out.println("DEBUG CONNECTIONS: Adding connection ID: " + connectionId);
         activeConnections.put(connectionId, handler);
     }
 
     //needed???
     public void subscribe(int connectionId, String channel, int subscriptionId) {
-        channelSubscribers.computeIfAbsent(channel, k -> new ConcurrentHashMap<>()).put(connectionId, subscriptionId);
-        clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
+        //channelSubscribers.computeIfAbsent(channel, k -> new ConcurrentHashMap<>()).put(connectionId, subscriptionId);
+        //clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
         
-        /*channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
+        channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
         channelSubscribers.get(channel).put(connectionId, subscriptionId);  
         
+        clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
+        System.out.println("DEBUG: ID " + connectionId + " Subscribed to " + channel + " (SubID: " + subscriptionId + ")");
+        /*
         clientSubscriptions.putIfAbsent(connectionId, new ConcurrentHashMap<>());
         clientSubscriptions.get(connectionId).put(subscriptionId, channel);  
         */  
     }
 
     public void unsubscribe(int subscriptionId, int connectionId) {
+        System.out.println("DEBUG: Unsubscribe requested for ConnID: " + connectionId + ", SubID: " + subscriptionId);
         ConcurrentHashMap<Integer, String> userSubs = clientSubscriptions.get(connectionId);
         if (userSubs != null) {
             String channel = userSubs.remove(subscriptionId);
@@ -85,7 +90,12 @@ public class ConnectionsImpl<T>implements Connections<T> {
                 ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers != null) {
                     subscribers.remove(connectionId);
+                    System.out.println("DEBUG: SUCCESS! Removed ConnID " + connectionId + " from channel " + channel);
                 }
+                else {
+                    System.out.println("DEBUG: FAILURE! Channel not found for SubID: " + subscriptionId);                }
+            } else{
+                System.out.println("DEBUG: FAILURE! No subscriptions map found for ConnID: " + connectionId);
             }
         }
     }

@@ -140,7 +140,8 @@ public class Reactor<T> implements Server<T> {
 
     @Override
     public void close() throws IOException {
-        selector.close();
+        if (selector!=null) {
+            selector.close();
+        }
     }
-
 }

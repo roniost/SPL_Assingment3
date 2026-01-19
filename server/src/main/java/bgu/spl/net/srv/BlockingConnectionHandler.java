@@ -9,8 +9,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-import bgu.spl.net.api.StompMessagingProtocol;//ADDED
-
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
     //private final StompMessagingProtocol<T> protocol;//ADDED
@@ -39,12 +37,12 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
-                    protocol.process(nextMessage);
-                    /*T response = protocol.process(nextMessage);
+                    //protocol.process(nextMessage);
+                    T response = protocol.process(nextMessage);
                     if (response != null) {
                         out.write(encdec.encode(response));
                         out.flush(); 
-                    }*/ //ORIGINAL
+                    } //ORIGINAL
                 }
             }
 
@@ -64,7 +62,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     public void send(T msg) {
         //IMPLEMENT IF NEEDED
         try {
-            System.out.println("DEBUG HANDLER: Sending message to client..."); // <--- הוסף את זה
+            System.out.println("DEBUG HANDLER: Sending message to client..."); 
             if (msg != null) {
                 out.write(encdec.encode(msg));
                 out.flush();
