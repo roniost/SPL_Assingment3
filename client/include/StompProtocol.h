@@ -7,58 +7,87 @@
 #include <mutex>
 #include <set>
 
-// TODO: implement the STOMP protocol
 class StompProtocol
 {
-
+    
     struct gameState {
-        std::string teamA;
-        std::string teamB;
-        std::map<std::string, std::string> generalStats;
-        std::map<std::string, std::string> team_a_stats;
-        std::map<std::string, std::string> team_b_stats;
-        std::set<Event> events;
-
-        gameState():teamA(""), teamB(""), generalStats({}), team_a_stats({}), team_b_stats({}), events() {}
+        std::string teamA = "";
+        std::string teamB = "";
+        std::map<std::string, std::string> generalStats = {};
+        std::map<std::string, std::string> team_a_stats = {};
+        std::map<std::string, std::string> team_b_stats = {};
+        std::set<Event> events = {};
     };
+
 private:
-    std::string username;
-    bool isConnected;
+
+    std::string username = "";
+    bool isConnected = false;
+    int subIDCounter = 0;
+    int reciptIDCounter = 0;
+    int waitingReciptID = 0;
+    mutable std::mutex mtx;
+    std::condition_variable cv;
+    bool responseReceived = false;
+    bool shouldTerminate = false;
 
     // subscriptionID <-> game
     std::map<std::string, int> gameToSubId;
     std::map<int, std::string> subIdToGame;
+
     // reciptID -> Action
     //std::map<int, std::string> reciptAction;
+
     // game -> user -> events
     std::map<std::string, std::map<std::string, gameState>> gameData;
 
     //std::vector<std::string> splitFrame(const std::string& frame, char delimiter);
-    Event frameToEvent(std::string frame);
+    //Event frameToEvent(std::string frame);
 public:
+
+    struct Frame {
+        std::string type = "";
+        std::string frameID = "";
+        std::string msg = "";
+    };
 
     // consturcotr
     StompProtocol();
 
-    // client->server
+    void waitForResponse(int reciptID = 0);
+    void notifyResponse(int reciptID = 0, bool instent = false);
+
     bool Login(std::string username);
+    std::string buildConnectionFrame(std::string host, std::string username, std::string password);
     bool Logout();
-    bool Join(std::string gameName, int subId, int reciptId);
-    bool Exit(std::string gameName);
+    std::string buildDisconnectFrame(int reciptID);
+    bool Join(std::string gameName, int subID);
+    std::string buildSubscribeFrame(std::string gameName, int subID, int reciptID);
+    //bool Exit(std::string gameName);
     bool Exit(int subId);
-    std::vector<std::string> Report(std::string filePath);
+    std::string buildUnsubscribeFrame(int subID, int reciptID);
+    std::string Report(std::string filePath);
 
     //client->self
-    std::string Summery(std::string gameName, std::string user);
+    void Summery(std::string gameName, std::string user, std::string filePath);
     bool prossesEvent(Event event, std::string& user);
 
     //server->client
     bool prossesFrame(std::string frame);
 
 
-    // geters (no need for setters)
+    // geters / setters
     bool getConnected() const {return isConnected;}
     bool isSubTo(std::string gameName) const;
     bool isSubTo(int subId) const;
+    int gameToSubID(std::string gameName) {std::lock_guard<std::mutex> lock(mtx); return gameToSubId[gameName];}
+    std::vector<std::string> splitFrame(const std::string& frame, char delimiter) const;
     //bool getAction(int reciptId);
+    int getNewSubID() {return ++subIDCounter;}
+    int getNewReciptID() {return ++reciptIDCounter;}
+    bool getTerminate() {return shouldTerminate;}
+    void setTerminate(bool val) {shouldTerminate = val;}
+    int getCurrentlyWaiting() {return waitingReciptID;}
+
+    Frame frameToFrame(std::string input);
 };
