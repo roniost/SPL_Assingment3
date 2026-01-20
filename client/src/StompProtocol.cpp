@@ -202,8 +202,8 @@ bool StompProtocol::prossesEvent(Event event, std::string& user) {
 
 // server -> client
 
-// support function for prossesing frames
-std::vector<std::string> splitFrame(const std::string& frame, char delimiter) {
+// support functions for prossesing frames
+std::vector<std::string> StompProtocol::splitFrame(const std::string& frame, char delimiter) {
     std::vector<std::string> split;
     std::string line;
     std::stringstream ss(frame);
@@ -213,7 +213,7 @@ std::vector<std::string> splitFrame(const std::string& frame, char delimiter) {
     return split;
 }
 
-StompProtocol::Frame parseFrame(std::string input) {
+StompProtocol::Frame StompProtocol::parseFrame(std::string input) {
     StompProtocol::Frame frame;
     std::vector<std::string> lines = splitFrame(input, '\n');
     frame.type = lines[0];
@@ -224,7 +224,7 @@ StompProtocol::Frame parseFrame(std::string input) {
 
 
 
-Event frameToEvent(std::string frame) {
+Event StompProtocol::frameToEvent(std::string frame) {
     // headers and fields for event creation
     std::string teamA, teamB, eventName, discription;
     int eventTime = 0;
@@ -319,12 +319,12 @@ StompProtocol::Frame StompProtocol::frameToFrame(std::string input) {
 }
 
 // getters
-bool StompProtocol::isSubTo(std::string gameName) const{
+bool StompProtocol::isSubTo(std::string gameName) {
     std::lock_guard<std::mutex> lock(mtx);
     return !!gameToSubId.count(gameName);
 }
 
-bool StompProtocol::isSubTo(int subId) const{
+bool StompProtocol::isSubTo(int subId) {
     std::lock_guard<std::mutex> lock(mtx);
     return !!subIdToGame.count(subId);
 }

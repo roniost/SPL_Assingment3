@@ -73,14 +73,16 @@ public:
 
     //server->client
     bool prossesFrame(std::string frame);
+    std::vector<std::string> splitFrame(const std::string& frame, char delimiter);
+    Frame parseFrame(std::string input);
+    Event frameToEvent(std::string frame);
 
 
     // geters / setters
-    bool getConnected() const {return isConnected;}
-    bool isSubTo(std::string gameName) const;
-    bool isSubTo(int subId) const;
+    bool getConnected() {return isConnected;}
+    bool isSubTo(std::string gameName);
+    bool isSubTo(int subId);
     int gameToSubID(std::string gameName) {std::lock_guard<std::mutex> lock(mtx); return gameToSubId[gameName];}
-    std::vector<std::string> splitFrame(const std::string& frame, char delimiter) const;
     //bool getAction(int reciptId);
     int getNewSubID() {return ++subIDCounter;}
     int getNewReciptID() {return ++reciptIDCounter;}
