@@ -8,32 +8,43 @@
 #include <fstream>
 
 void StompProtocol::waitForResponse(int reciptID) {
+    std::cout << "[DEBUG] waitForResponse called. Waiting for ReciptID: " << reciptID << std::endl;
     std::unique_lock<std::mutex> lock(mtx);
     waitingReciptID = reciptID;
     cv.wait(lock, [this] { return responseReceived; });
+    std::cout << "[DEBUG] waitForResponse finished for ReciptID: " << reciptID << std::endl;
     responseReceived = false; // Reset for next time
 }
 
 void StompProtocol::notifyResponse(int reciptID, bool instent) {
+    std::cout << "[DEBUG] notifyResponse called. ReciptID: " << reciptID << ", Instant: " << instent << std::endl;
     if(!instent && waitingReciptID != reciptID) {
-        std::cout << "incorrect recipt id recived, continuing to wait\n";
+        //std::cout << "incorrect recipt id recived, continuing to wait\n";
+        std::cout << "[DEBUG] notifyResponse: Incorrect recipt id received (Expected: " << waitingReciptID << ", Got: " << reciptID << "), continuing to wait\n";
         return;
     }
     std::lock_guard<std::mutex> lock(mtx);
     responseReceived = true;
     cv.notify_one();
+    std::cout << "[DEBUG] notifyResponse: Notification sent." << std::endl;
 }
 
 // client -> server
 bool StompProtocol::Login(std::string username) {
+    std::cout << "[DEBUG] Login called for user: " << username << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
-    if(isConnected) return false;
+    if(isConnected) {
+        std::cout << "[DEBUG] Login failed: Already connected." << std::endl;
+        return false;
+    }
     this->username = username;
     this->isConnected = true;
+    std::cout << "[DEBUG] Login successful." << std::endl;
     return true;
 }
 
 std::string StompProtocol::buildConnectionFrame(std::string host, std::string username, std::string password) {
+    std::cout << "[DEBUG] Building CONNECTION frame for host: " << host << ", user: " << username << std::endl;
     std::string frame = "CONNECT\naccept -version :1.2\n";
     frame.append("host:" + host + "\n");
     frame.append("login:" + username + "\n");
@@ -43,14 +54,20 @@ std::string StompProtocol::buildConnectionFrame(std::string host, std::string us
 }
 
 bool StompProtocol::Logout() {
+    std::cout << "[DEBUG] Logout called." << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
-    if(!isConnected) return false;
+    if(!isConnected) {
+        std::cout << "[DEBUG] Logout failed: Not connected." << std::endl;
+        return false;
+    }
     this->isConnected = false;
     this->username = "";
+    std::cout << "[DEBUG] Logout successful." << std::endl;
     return true;
 }
 
 std::string StompProtocol::buildDisconnectFrame(int reciptID) {
+    std::cout << "[DEBUG] Building DISCONNECT frame. ReciptID: " << reciptID << std::endl;
     std::string frame = "DISCONNECT\n";
     frame.append("recipt:" + std::to_string(reciptID) + "\n");
     frame.append("\n");
@@ -58,15 +75,24 @@ std::string StompProtocol::buildDisconnectFrame(int reciptID) {
 }
 
 bool StompProtocol::Join(std::string gameName, int subId) {
+    std::cout << "[DEBUG] Join called. Game: " << gameName << ", SubID: " << subId << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
-    if(!isConnected) return false;
-    else if (!isSubTo(gameName)) return false;
+    if(!isConnected) {
+        std::cout << "[DEBUG] Join failed: Not connected." << std::endl;
+        return false;
+    }
+    else if (!isSubTo(gameName)) {
+        std::cout << "[DEBUG] Join failed: Not subscribed logic check (Note: Logic seems inverted in original code?)" << std::endl;
+        return false;
+    }
     subIdToGame[subId] = gameName;
     gameToSubId[gameName] = subId;
+    std::cout << "[DEBUG] Join successful. Mapped " << gameName << " to " << subId << std::endl;
     return true;
 }
 
 std::string StompProtocol::buildSubscribeFrame(std::string gameName, int subID, int reciptID) {
+    std::cout << "[DEBUG] Building SUBSCRIBE frame. Game: " << gameName << ", SubID: " << subID << ", ReciptID: " << reciptID << std::endl;
     std::string frame = "SUBSCRIBE\n";
     frame.append("destination:/" + gameName);
     frame.append("id:" + std::to_string(subID) + "\n");
@@ -87,16 +113,22 @@ std::string StompProtocol::buildSubscribeFrame(std::string gameName, int subID, 
 }*/
 
 bool StompProtocol::Exit(int subId) {
+    std::cout << "[DEBUG] Exit called. SubID: " << subId << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
-    if(!isSubTo(subId)) return false;
+    if(!isSubTo(subId)) {
+        std::cout << "[DEBUG] Exit failed: Not subscribed to SubID " << subId << std::endl;
+        return false;
+    }
     std::string gameName = subIdToGame[subId];
     gameToSubId.erase(gameName);
     subIdToGame.erase(subId);
     gameData.erase(gameName);
+    std::cout << "[DEBUG] Exit successful. Removed " << gameName << std::endl;
     return true;
 }
 
 std::string StompProtocol::buildUnsubscribeFrame(int subID, int reciptID) {
+    std::cout << "[DEBUG] Building UNSUBSCRIBE frame. SubID: " << subID << ", ReciptID: " << reciptID << std::endl;
     std::string frame = "UNSUBSCRIBE\n";
     frame.append("id:" + std::to_string(subID) + "\n");
     frame.append("recipt:" + std::to_string(reciptID) + "\n");
@@ -105,10 +137,15 @@ std::string StompProtocol::buildUnsubscribeFrame(int subID, int reciptID) {
 }
 
 std::string StompProtocol::Report(std::string filePath) {
+    std::cout << "[DEBUG] Report called. FilePath: " << filePath << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
-    if(!isConnected) return "";
+    if(!isConnected) {
+        std::cout << "[DEBUG] Report failed: Not connected." << std::endl;
+        return "";
+    }
     names_and_events input = parseEventsFile(filePath);
     std::string gameName = input.team_a_name + "_" + input.team_b_name;
+    std::cout << "[DEBUG] Parsed events for game: " << gameName << ", Count: " << input.events.size() << std::endl;
     std::string out;
 
     for(Event event : input.events) {
@@ -124,13 +161,18 @@ std::string StompProtocol::Report(std::string filePath) {
 
 // client -> self
 void StompProtocol::Summery(std::string gameName, std::string user, std::string filePath) {
+    std::cout << "[DEBUG] Summary called. Game: " << gameName << ", User: " << user << ", Path: " << filePath << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(!isSubTo(gameName))
+    if(!isSubTo(gameName)) {
+        std::cout << "[DEBUG] Summary error: Not subscribed to game." << std::endl;
         throw std::invalid_argument("not subscribed to game");
+    }
     gameState game = gameData[gameName][user];
-    if(game.events.size()==0)
+    if(game.events.size()==0) {
+        std::cout << "[DEBUG] Summary error: No events found for user." << std::endl;
         throw std::invalid_argument("no existing reports from this user");
+    }
     
     std::string out = "";
     out.append(game.teamA + " vs " + game.teamB + "\n");
@@ -155,9 +197,11 @@ void StompProtocol::Summery(std::string gameName, std::string user, std::string 
     std::ofstream file(filePath);
     file << out;
     file.close();
+    std::cout << "[DEBUG] Summary written to file successfully." << std::endl;
 }
 
 bool StompProtocol::prossesEvent(Event event, std::string& user) {
+    std::cout << "[DEBUG] prossesEvent called. User: " << user << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
     std::string gameName = event.get_team_a_name() + "_" + event.get_team_b_name();
     if(!gameToSubId.count(gameName)) {
@@ -165,6 +209,7 @@ bool StompProtocol::prossesEvent(Event event, std::string& user) {
     }
 
     if(!gameData.count(gameName) || !gameData[gameName].count(user)) {
+        std::cout << "[DEBUG] prossesEvent: New entry for game/user." << std::endl;
         gameState state;
         state.teamA = event.get_team_a_name();
         state.teamB = event.get_team_b_name();
@@ -183,6 +228,7 @@ bool StompProtocol::prossesEvent(Event event, std::string& user) {
         return true;
     }
     else {
+        std::cout << "[DEBUG] prossesEvent: Updating existing entry." << std::endl;
         for(auto pair : event.get_game_updates()) {
             std::string key = pair.first;
             gameData[gameName][user].generalStats[key] = pair.second;
@@ -225,6 +271,7 @@ StompProtocol::Frame StompProtocol::parseFrame(std::string input) {
 
 
 Event StompProtocol::frameToEvent(std::string frame) {
+    std::cout << "[DEBUG] frameToEvent called." << std::endl;
     // headers and fields for event creation
     std::string teamA, teamB, eventName, discription;
     int eventTime = 0;
@@ -286,9 +333,11 @@ Event StompProtocol::frameToEvent(std::string frame) {
 }
 
 bool StompProtocol::prossesFrame(std::string frame) {
+    std::cout << "[DEBUG] prossesFrame called. Raw Frame size: " << frame.length() << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
 
     StompProtocol::Frame msg = parseFrame(frame);
+    std::cout << "[DEBUG] prossesFrame: Parsed type: " << msg.type << std::endl;
     std::string command = frame;
         
     Event newEvent = frameToEvent(frame);
