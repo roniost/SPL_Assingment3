@@ -21,15 +21,15 @@ class StompProtocol
 
 private:
 
-    std::string username = "";
-    bool isConnected = false;
-    int subIDCounter = 0;
-    int reciptIDCounter = 0;
-    int waitingReciptID = 0;
+    std::string username;
+    bool isConnected;
+    int subIDCounter;
+    int reciptIDCounter;
+    int waitingReciptID;
     mutable std::mutex mtx;
     std::condition_variable cv;
-    bool responseReceived = false;
-    bool shouldTerminate = false;
+    bool responseReceived;
+    bool shouldTerminate;
 
     // subscriptionID <-> game
     std::map<std::string, int> gameToSubId;
@@ -45,14 +45,13 @@ private:
     //Event frameToEvent(std::string frame);
 public:
 
+    StompProtocol():username(""),isConnected(false),subIDCounter(0),reciptIDCounter(0),waitingReciptID(0),mtx(),cv(),responseReceived(false),shouldTerminate(false),gameToSubId({}),subIdToGame({}),gameData({}){}
+
     struct Frame {
         std::string type = "";
         std::string frameID = "";
         std::string msg = "";
     };
-
-    // consturcotr
-    StompProtocol();
 
     void waitForResponse(int reciptID = 0);
     void notifyResponse(int reciptID = 0, bool instent = false);

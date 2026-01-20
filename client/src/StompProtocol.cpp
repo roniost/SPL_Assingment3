@@ -1,5 +1,3 @@
-#pragma once
-
 #include "../include/StompProtocol.h"
 //#include "../include/ConnectionHandler.h"
 #include "../include/event.h"
@@ -8,8 +6,6 @@
 #include <mutex>
 #include <sstream>
 #include <fstream>
-
-StompProtocol::StompProtocol():username(""),isConnected(false) {}
 
 void StompProtocol::waitForResponse(int reciptID) {
     std::unique_lock<std::mutex> lock(mtx);
