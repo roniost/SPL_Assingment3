@@ -170,7 +170,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                                 "receipt-id:" + receiptId + "\n" + 
                                 "\n"
                                 + "\u0000";
-            connections.send(connectionID, response);
+            connections.send(connectionID,   response);
         }
     }
 

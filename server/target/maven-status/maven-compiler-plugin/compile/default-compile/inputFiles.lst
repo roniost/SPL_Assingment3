@@ -9,6 +9,7 @@
 /workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/impl/data/Database.java
 /workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/impl/echo/EchoServer.java
 /workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/impl/rci/RCIClient.java
+/workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/impl/data/SqlTester.java
 /workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/impl/stomp/StompMessageEncoderDecoder.java
 /workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/api/StompMessagingProtocol.java
 /workspaces/SPL_Assingment3/server/src/main/java/bgu/spl/net/impl/rci/ObjectEncoderDecoder.java

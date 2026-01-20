@@ -1,6 +1,7 @@
 bgu/spl/net/srv/Server$1.class
 bgu/spl/net/impl/newsfeed/NewsFeedServerMain.class
 bgu/spl/net/impl/rci/Command.class
+bgu/spl/net/impl/data/SqlTester.class
 bgu/spl/net/api/MessagingProtocol.class
 bgu/spl/net/impl/stomp/StompMessageEncoderDecoder.class
 bgu/spl/net/impl/rci/RCIClient.class

@@ -73,7 +73,7 @@ public class ConnectionsImpl<T>implements Connections<T> {
         channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
         channelSubscribers.get(channel).put(connectionId, subscriptionId);  
         
-        clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
+        //clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
         System.out.println("DEBUG: ID " + connectionId + " Subscribed to " + channel + " (SubID: " + subscriptionId + ")");
         /*
         clientSubscriptions.putIfAbsent(connectionId, new ConcurrentHashMap<>());
