@@ -11,13 +11,15 @@ the methods below.
 import socket
 import sys
 import threading
+import sqlite3
+import os
 
 
 SERVER_NAME = "STOMP_PYTHON_SQL_SERVER"  # DO NOT CHANGE!
 DB_FILE = "stomp_server.db"              # DO NOT CHANGE!
 
-
-def recv_null_terminated(sock: socket.socket) -> str:
+# Reads data from the socket until a null byte is received.
+def recv_null_terminated(sock: socket.socket) -> str: 
     data = b""
     while True:
         chunk = sock.recv(1024)
@@ -30,16 +32,63 @@ def recv_null_terminated(sock: socket.socket) -> str:
 
 
 def init_database():
-    pass
+    if os.path.exists(DB_FILE):
+        print(f"[{SERVER_NAME}] Database file '{DB_FILE}' already exists.")
+        return
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                (username TEXT PRIMARY KEY, password TEXT NOT NULL)''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS logins
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  username TEXT NOT NULL,
+                  login_time TEXT NOT NULL,
+                  logout_time TEXT,
+                  FOREIGN KEY(username) REFERENCES users(username))''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS files
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  username TEXT NOT NULL,
+                  filename TEXT NOT NULL,
+                  upload_time TEXT,
+                  FOREIGN KEY(username) REFERENCES users(username))''')
+    
+    conn.commit()
+    conn.close()
+    print(f"[{SERVER_NAME}] Database initialized and tables created.")
 
 
 def execute_sql_command(sql_command: str) -> str:
-    return "done"
-
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute(sql_command)
+        conn.commit()
+        return "done"
+    except sqlite3.Error as e:
+        return f"ERROR: {e}"
+    finally: #maybe not needed
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 def execute_sql_query(sql_query: str) -> str:
-    return "done"
-
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute(sql_query)
+        rows = c.fetchall()
+        if not rows:
+            return "EMPTY"
+        result = "\n".join(["|".join(map(str, row)) for row in rows])
+        return result
+    except sqlite3.Error as e:
+        return f"ERROR: {e}"
+    finally:
+        conn.close()
 
 def handle_client(client_socket: socket.socket, addr):
     print(f"[{SERVER_NAME}] Client connected from {addr}")
@@ -50,10 +99,15 @@ def handle_client(client_socket: socket.socket, addr):
             if message == "":
                 break
 
-            print(f"[{SERVER_NAME}] Received:")
-            print(message)
+            if message.strip().upper().startswith("SELECT"): #ADDED
+                response = execute_sql_query(message) #ADDED
+            else: #ADDED
+                response = execute_sql_command(message)  #ADDED
+            
+            #print(f"[{SERVER_NAME}] Received:")
+            #print(message)
 
-            client_socket.sendall(b"done\0")
+            client_socket.sendall((response + "\0").encode("utf-8"))
 
     except Exception as e:
         print(f"[{SERVER_NAME}] Error handling client {addr}: {e}")
@@ -66,6 +120,8 @@ def handle_client(client_socket: socket.socket, addr):
 
 
 def start_server(host="127.0.0.1", port=7778):
+
+    init_database()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
@@ -79,7 +135,7 @@ def start_server(host="127.0.0.1", port=7778):
             client_socket, addr = server_socket.accept()
             t = threading.Thread(
                 target=handle_client,
-                args=(client_socket, addr),
+                args=(client_socket, addr), 
                 daemon=True
             )
             t.start()
