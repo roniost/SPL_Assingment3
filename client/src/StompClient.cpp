@@ -1,10 +1,12 @@
 #include <stdlib.h>
+#include <thread>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include "../include/ConnectionHandler.h"
 #include "../include/StompProtocol.h"
 
-void listen(ConnectionHandler& connection, StompProtocol& protocol) {
+void listenPort(ConnectionHandler& connection, StompProtocol& protocol) {
     while(!protocol.getTerminate()) {
         std::string frame;
         if (!connection.getFrameAscii(frame, '\0')) {
@@ -33,7 +35,7 @@ int main(int argc, char *argv[]) {
 	
     StompProtocol protocol;
     std::thread reciver;
-    
+
     while(1) {
         std::string command;
         std::getline(std::cin, command);
@@ -65,6 +67,7 @@ int main(int argc, char *argv[]) {
         }
 
         // got connection approved
+        reciver = std::thread(listenPort, std::ref(connection), std::ref(protocol));
         while(!protocol.getTerminate()) {
             std::string command;
             std::getline(std::cin, command);
