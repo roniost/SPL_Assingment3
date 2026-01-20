@@ -99,7 +99,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         String response = "CONNECTED\n" +
                           "version:1.2\n" +
                           "\n" + 
-                          "\n0000";
+                          "\u0000";
         connections.send(connectionID, response);
     }
 

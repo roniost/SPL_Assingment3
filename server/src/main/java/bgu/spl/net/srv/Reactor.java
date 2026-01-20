@@ -108,8 +108,8 @@ public class Reactor<T> implements Server<T> {
                 stompProtocol,
                 clientChan,
                 this);
-        
-        int connectionId = connectionIdCounter++;// ADDED
+        connectionIdCounter++;//added
+        int connectionId = connectionIdCounter;// ADDED
         connections.addConnection(connectionId, handler); // ADDED
         stompProtocol.start(connectionId, connections); // ADDED
         
