@@ -16,6 +16,7 @@ void listenPort(ConnectionHandler& connection, StompProtocol& protocol) {
             protocol.notifyResponse(0, true);
             break;
         }
+        if(frame == "\0") continue;
         std::cout << "[DEBUG] Listener received frame:\n" << frame << "\n----------------" << std::endl;
         StompProtocol::Frame framed = protocol.frameToFrame(frame);
         std::cout << "[DEBUG] Listener processing frame type: " << framed.type << std::endl;
