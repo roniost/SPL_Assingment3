@@ -18,11 +18,36 @@
 			// SQL server connection details
 			this.sqlHost = "127.0.0.1";
 			this.sqlPort = 7778;
+
+			initialize();
 		}
 
 		public static Database getInstance() {
 			return Instance.instance;
 		}
+
+	    private void initialize() {
+	        System.out.println("DEBUG DB: Loading users from SQL...");
+	        String result = executeSQL("SELECT username, password FROM users");
+		
+	        if (result.startsWith("ERROR") || result.equals("EMPTY") || result.trim().isEmpty()) {
+	            System.out.println("DEBUG DB: No users found or DB error (starting empty).");
+	            return;
+	        }
+
+	        String[] rows = result.split("\n");
+	        for (String row : rows) {
+	            String[] parts = row.split("\\|"); 
+	            if (parts.length >= 2) {
+	                String username = parts[0].trim();
+	                String password = parts[1].trim();
+	                // Create user in memory but NOT connected (-1)
+	                User user = new User(-1, username, password);
+	                userMap.put(username, user);
+	            }
+	        }
+	        System.out.println("DEBUG DB: Loaded " + userMap.size() + " users from SQL.");
+	    }
 
 		/**
 		 * Execute SQL query and return result
@@ -63,7 +88,7 @@
 
 		public void addUser(User user) {
 			userMap.putIfAbsent(user.name, user);
-			connectionsIdMap.putIfAbsent(user.getConnectionId(), user);
+			//connectionsIdMap.putIfAbsent(user.getConnectionId(), user);
 		}
 
 		public LoginStatus login(int connectionId, String username, String password) {
@@ -122,6 +147,7 @@
 						User user = new User(connectionId, username, password);
 						user.login();
 						addUser(user);
+						connectionsIdMap.put(connectionId, user);
 						return true;
 					}
 				}
