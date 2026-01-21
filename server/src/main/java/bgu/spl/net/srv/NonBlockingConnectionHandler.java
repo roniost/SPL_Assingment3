@@ -79,6 +79,10 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+
+        if (protocol instanceof bgu.spl.net.api.StompMessagingProtocol) {
+            ((bgu.spl.net.api.StompMessagingProtocol) protocol).close();
+        }
     }
 
     public boolean isClosed() {
