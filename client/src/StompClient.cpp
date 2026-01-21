@@ -55,9 +55,12 @@ int main(int argc, char *argv[]) {
         }
         connection.sendFrameAscii(protocol.buildConnectionFrame(host, args[2], args[3]), '\0');
         std::string answer;
-        if(connection.getLine(answer)) {
-            if(answer == "ERROR") {
-                std::cout << "wrong password\n";
+        if(connection.getFrameAscii(answer, '\0')) {
+            if (answer.find("CONNECTED") != std::string::npos) {
+                std::cout << "Login successful" << std::endl;
+            }
+            else if(answer.find("ERROR") != std::string::npos) {
+                std::cout << "Login failed: " << answer << std::endl;
                 continue;
             }
         }
