@@ -14,4 +14,6 @@ public interface StompMessagingProtocol<T> extends MessagingProtocol<T> {
      * @return true if the connection should be terminated
      */
     boolean shouldTerminate();
+
+    public void close();
 }

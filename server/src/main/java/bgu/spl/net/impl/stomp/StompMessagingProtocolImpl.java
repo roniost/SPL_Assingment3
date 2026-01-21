@@ -66,6 +66,13 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         return shouldTerminate;
     }
 
+    public void close(){
+        this.shouldTerminate = true;
+        if (connections!=null) {
+            connections.disconnect(connectionID);
+        }
+    }
+
     
 
     // --- Command Handlers ---
