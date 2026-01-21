@@ -147,11 +147,12 @@ std::vector<std::string> StompProtocol::Report(std::string filePath) {
     std::string gameName = input.team_a_name + "_" + input.team_b_name;
     std::cout << "[DEBUG] Parsed events for game: " << gameName << ", Count: " << input.events.size() << std::endl;
     std::vector<std::string> out;
-
+    std::string fileName = filePath.substr(filePath.find_last_of('/') + 1);
     for(Event event : input.events) {
         std::string msg = "";
         msg.append("SEND\n").append("destination:/" + gameName + "\n\n");
         msg.append("user:" + username + "\n");
+        msg.append("filename:" + fileName + "\n");
         msg.append(event.toString() + "\n");
         out.push_back(msg);
     }
