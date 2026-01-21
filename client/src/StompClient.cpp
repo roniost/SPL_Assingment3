@@ -27,13 +27,15 @@ void listenPort(ConnectionHandler& connection, StompProtocol& protocol) {
             break;
         }
         else if (framed.type == "RECEIPT") {
-            std::cout << "[DEBUG] Listener: RECIPT frame received. ID: " << framed.frameID << std::endl;
+            std::cout << "[DEBUG] Listener: RECIPT frame received. ID: " << framed.frameID << "." << std::endl;
             protocol.notifyResponse(std::stoi(framed.frameID));
+            if(std::stoi(framed.frameID) == protocol.getLogoutReceiptID()) break;
             continue;
         }
         else if (framed.type == "MESSAGE") {
             std::cout << "[DEBUG] Listener: MESSAGE frame received. Processing..." << std::endl;
             protocol.prossesFrame(frame);
+            continue;
         }
         std::cout << "[DEBUG] Listener thread exiting." << std::endl;
     }
@@ -72,6 +74,7 @@ int main(int argc, char *argv[]) {
             std::cout << "[DEBUG] Server response during login: " << answer << std::endl;
             if (answer.find("CONNECTED") != std::string::npos) {
                 std::cout << "[DEBUG] login successful" << std::endl;
+                protocol.Login(args[2]);
             }
             else if(answer.find("ERROR") != std::string::npos) {
                 std::cout << "wrong password\n";
@@ -119,7 +122,7 @@ int main(int argc, char *argv[]) {
             else if (args[0] == "report") {
                 std::cout << "[DEBUG] Generating report from file: " << args[1] << std::endl;
                 std::string report = protocol.Report(args[1]);
-                if(!(report == "") || !connection.sendFrameAscii(report, '\0')) {
+                if(report == "" || !connection.sendFrameAscii(report, '\0')) {
                     std::cout << "Disconnected. Exiting...\n";
                     protocol.setTerminate(true);
                     reciver.join();
@@ -136,10 +139,14 @@ int main(int argc, char *argv[]) {
             else if (args[0] == "logout") {
                 int reciptID = protocol.getNewReciptID();
                 std::cout << "[DEBUG] Logging out. ReceiptID: " << reciptID << std::endl;
+                protocol.setLogoutReceiptID(reciptID);
                 connection.sendFrameAscii(protocol.buildDisconnectFrame(reciptID), '\0');
+                std::cout << "[DEBUG] protocol connection check1: " << protocol.getConnected() << std::endl;
                 protocol.waitForResponse(reciptID);
+                std::cout << "[DEBUG] protocol connection check2: " << protocol.getConnected() << std::endl;
                 if(protocol.getTerminate()) break;
                 protocol.Logout();
+                std::cout << "[DEBUG] Client: closing connection." << std::endl;
                 connection.close();
                 reciver.join();
                 break;

@@ -81,8 +81,8 @@ bool StompProtocol::Join(std::string gameName, int subId) {
         std::cout << "[DEBUG] Join failed: Not connected." << std::endl;
         return false;
     }
-    else if (!isSubTo(gameName)) {
-        std::cout << "[DEBUG] Join failed: Not subscribed logic check (Note: Logic seems inverted in original code?)" << std::endl;
+    else if (gameToSubId.count(gameName)) {
+        std::cout << "[DEBUG] Join failed: Not subscribed logic check" << std::endl;
         return false;
     }
     subIdToGame[subId] = gameName;
@@ -94,7 +94,7 @@ bool StompProtocol::Join(std::string gameName, int subId) {
 std::string StompProtocol::buildSubscribeFrame(std::string gameName, int subID, int reciptID) {
     std::cout << "[DEBUG] Building SUBSCRIBE frame. Game: " << gameName << ", SubID: " << subID << ", ReciptID: " << reciptID << std::endl;
     std::string frame = "SUBSCRIBE\n";
-    frame.append("destination:/" + gameName);
+    frame.append("destination:/" + gameName + "\n");
     frame.append("id:" + std::to_string(subID) + "\n");
     frame.append("receipt:" + std::to_string(reciptID) + "\n");
     frame.append("\n");
@@ -115,7 +115,7 @@ std::string StompProtocol::buildSubscribeFrame(std::string gameName, int subID, 
 bool StompProtocol::Exit(int subId) {
     std::cout << "[DEBUG] Exit called. SubID: " << subId << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
-    if(!isSubTo(subId)) {
+    if(subIdToGame.count(subId) == 0) {
         std::cout << "[DEBUG] Exit failed: Not subscribed to SubID " << subId << std::endl;
         return false;
     }

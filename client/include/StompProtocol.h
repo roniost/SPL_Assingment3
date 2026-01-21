@@ -30,7 +30,7 @@ private:
     std::condition_variable cv;
     bool responseReceived;
     bool shouldTerminate;
-
+    int logoutReceiptID = -1;
     // subscriptionID <-> game
     std::map<std::string, int> gameToSubId;
     std::map<int, std::string> subIdToGame;
@@ -89,6 +89,7 @@ public:
     bool getTerminate() {return shouldTerminate;}
     void setTerminate(bool val) {shouldTerminate = val;}
     int getCurrentlyWaiting() {return waitingReciptID;}
-
+    int getLogoutReceiptID() {return logoutReceiptID;}
+    void setLogoutReceiptID(int val) {std::lock_guard<std::mutex> lock(mtx); logoutReceiptID = val;}
     Frame frameToFrame(std::string input);
 };

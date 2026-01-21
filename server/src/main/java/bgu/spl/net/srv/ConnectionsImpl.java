@@ -38,6 +38,9 @@ public class ConnectionsImpl<T>implements Connections<T> {
                     handler.send((T) modifiedMsg);
                     //send( (int)connectionID, (T) modifiedMsg); //why vs code is stupid
                 }
+                else{
+                    disconnect(connectionID);
+                }
             }
         }
     }
@@ -47,9 +50,11 @@ public class ConnectionsImpl<T>implements Connections<T> {
         System.out.println("DEBUG CONNECTIONS: Disconnecting connection ID: " + connectionId);
         activeConnections.remove(connectionId); //remove active
 
+        System.out.println("DEBUG CONNECTIONS: removing subscriptions");
         ConcurrentHashMap<Integer, String> subscriptions = clientSubscriptions.remove(connectionId);
+        System.out.println("debug dubdv" + subscriptions);
         if (subscriptions != null) {
-            send(connectionId, (T)"DISCONNECTING user"); //notify client
+            System.out.println("DEBUG CONNECTIONS: found subscriptions");
             for (String channel : subscriptions.values()) {
                 ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers!=null) {

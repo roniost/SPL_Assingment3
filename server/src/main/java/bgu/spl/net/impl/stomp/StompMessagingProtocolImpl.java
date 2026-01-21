@@ -66,6 +66,8 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         return shouldTerminate;
     }
 
+    
+
     // --- Command Handlers ---
     private void handleConnect(Frame frame) {
         String login = frame.headers.get("login");
@@ -156,9 +158,12 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     
     private void handleDisconnect(Frame frame) {
         verifyLoggedIn();
+        System.out.println("DEBUG PROTOCOL: handling recipt");
         handleReceipt(frame);
+        System.out.println("DEBUG PROTOCOL: removing user");
         activeUsers.remove(currentUser);
         shouldTerminate = true;
+        System.out.println("DEBUG PROTOCOL: desconnecting from connections");
         connections.disconnect(connectionID);
     } 
 
@@ -170,6 +175,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                                 "receipt-id:" + receiptId + "\n" + 
                                 "\n"
                                 + "\u0000";
+            System.out.println("DEBUG PROTOCOL: sending responce: " + response);
             connections.send(connectionID,   response);
         }
     }
