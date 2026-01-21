@@ -69,7 +69,7 @@ bool StompProtocol::Logout() {
 std::string StompProtocol::buildDisconnectFrame(int reciptID) {
     std::cout << "[DEBUG] Building DISCONNECT frame. ReciptID: " << reciptID << std::endl;
     std::string frame = "DISCONNECT\n";
-    frame.append("recipt:" + std::to_string(reciptID) + "\n");
+    frame.append("receipt:" + std::to_string(reciptID) + "\n");
     frame.append("\n");
     return frame;
 }
@@ -96,7 +96,7 @@ std::string StompProtocol::buildSubscribeFrame(std::string gameName, int subID, 
     std::string frame = "SUBSCRIBE\n";
     frame.append("destination:/" + gameName);
     frame.append("id:" + std::to_string(subID) + "\n");
-    frame.append("recipt:" + std::to_string(reciptID) + "\n");
+    frame.append("receipt:" + std::to_string(reciptID) + "\n");
     frame.append("\n");
     return frame;
 }
@@ -131,7 +131,7 @@ std::string StompProtocol::buildUnsubscribeFrame(int subID, int reciptID) {
     std::cout << "[DEBUG] Building UNSUBSCRIBE frame. SubID: " << subID << ", ReciptID: " << reciptID << std::endl;
     std::string frame = "UNSUBSCRIBE\n";
     frame.append("id:" + std::to_string(subID) + "\n");
-    frame.append("recipt:" + std::to_string(reciptID) + "\n");
+    frame.append("receipt:" + std::to_string(reciptID) + "\n");
     frame.append("\n");
     return frame;
 }
@@ -362,7 +362,7 @@ StompProtocol::Frame StompProtocol::frameToFrame(std::string input) {
     std::vector<std::string> lines = splitFrame(input, '\n');
     Frame frame;
     frame.type = lines[0];
-    frame.frameID = lines[1].substr(lines[1].find_first_of(":"), lines[1].length() - 1);
+    frame.frameID = lines[1].substr(lines[1].find_first_of(":") + 1, lines[1].length());
     frame.msg = input;
     return frame;
 }

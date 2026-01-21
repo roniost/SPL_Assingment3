@@ -26,7 +26,7 @@ void listenPort(ConnectionHandler& connection, StompProtocol& protocol) {
             protocol.notifyResponse(std::stoi(framed.frameID), true);
             break;
         }
-        else if (framed.type == "RECIPT") {
+        else if (framed.type == "RECEIPT") {
             std::cout << "[DEBUG] Listener: RECIPT frame received. ID: " << framed.frameID << std::endl;
             protocol.notifyResponse(std::stoi(framed.frameID));
             continue;
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
             }
             else if (args[0] == "logout") {
                 int reciptID = protocol.getNewReciptID();
-                std::cout << "[DEBUG] Logging out. ReciptID: " << reciptID << std::endl;
+                std::cout << "[DEBUG] Logging out. ReceiptID: " << reciptID << std::endl;
                 connection.sendFrameAscii(protocol.buildDisconnectFrame(reciptID), '\0');
                 protocol.waitForResponse(reciptID);
                 if(protocol.getTerminate()) break;
