@@ -65,7 +65,7 @@ public:
     //bool Exit(std::string gameName);
     bool Exit(int subId);
     std::string buildUnsubscribeFrame(int subID, int reciptID);
-    std::string Report(std::string filePath);
+    std::vector<std::string> Report(std::string filePath);
 
     //client->self
     void Summery(std::string gameName, std::string user, std::string filePath);

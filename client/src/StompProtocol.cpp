@@ -136,27 +136,27 @@ std::string StompProtocol::buildUnsubscribeFrame(int subID, int reciptID) {
     return frame;
 }
 
-std::string StompProtocol::Report(std::string filePath) {
+std::vector<std::string> StompProtocol::Report(std::string filePath) {
     std::cout << "[DEBUG] Report called. FilePath: " << filePath << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
     if(!isConnected) {
         std::cout << "[DEBUG] Report failed: Not connected." << std::endl;
-        return "";
+        return {};
     }
     names_and_events input = parseEventsFile(filePath);
     std::string gameName = input.team_a_name + "_" + input.team_b_name;
     std::cout << "[DEBUG] Parsed events for game: " << gameName << ", Count: " << input.events.size() << std::endl;
-    std::string out;
+    std::vector<std::string> out;
 
     for(Event event : input.events) {
         std::string msg = "";
         msg.append("SEND\n").append("destination:/" + gameName + "\n\n");
-        msg.append("user: " + username + "\n");
-        msg.append(event.toString() + "\n\0\n");
-        out.append(msg);
+        msg.append("user:" + username + "\n");
+        msg.append(event.toString() + "\n");
+        out.push_back(msg);
     }
 
-    return out.substr(0, out.length()-2);
+    return out;
 }
 
 // client -> self
@@ -164,7 +164,7 @@ void StompProtocol::Summery(std::string gameName, std::string user, std::string 
     std::cout << "[DEBUG] Summary called. Game: " << gameName << ", User: " << user << ", Path: " << filePath << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(!isSubTo(gameName)) {
+    if(gameToSubId.count(gameName)==0) {
         std::cout << "[DEBUG] Summary error: Not subscribed to game." << std::endl;
         throw std::invalid_argument("not subscribed to game");
     }
@@ -190,9 +190,9 @@ void StompProtocol::Summery(std::string gameName, std::string user, std::string 
     for(auto pair : game.team_b_stats)
         out.append(pair.first + ": " + pair.second + "\n");
     
-    out.append("\nGame event reports:");
+    out.append("\nGame event reports:\n");
     for(Event event : game.events)
-        out.append("\n" + std::to_string(event.get_time()) + " - " + event.get_name() + ":\n\n" + event.get_discription() + "\n\n");
+        out.append("\n" + std::to_string(event.get_time()) + " - " + event.get_name() + ":\n\n" + event.get_discription() + "\n");
 
     std::ofstream file(filePath);
     file << out;
@@ -204,11 +204,12 @@ bool StompProtocol::prossesEvent(Event event, std::string& user) {
     std::cout << "[DEBUG] prossesEvent called. User: " << user << std::endl;
     std::lock_guard<std::mutex> lock(mtx);
     std::string gameName = event.get_team_a_name() + "_" + event.get_team_b_name();
-    if(!gameToSubId.count(gameName)) {
-        return false; // not subscribed to game
+    if(gameToSubId.count(gameName) == 0) {
+        std::cout << "[DEBUG] prossesEvent: not subscribed to game\n";
+        return false;
     }
 
-    if(!gameData.count(gameName) || !gameData[gameName].count(user)) {
+    if(gameData.count(gameName) == 0 || gameData[gameName].count(user) == 0) {
         std::cout << "[DEBUG] prossesEvent: New entry for game/user." << std::endl;
         gameState state;
         state.teamA = event.get_team_a_name();
@@ -334,7 +335,7 @@ Event StompProtocol::frameToEvent(std::string frame) {
 
 bool StompProtocol::prossesFrame(std::string frame) {
     std::cout << "[DEBUG] prossesFrame called. Raw Frame size: " << frame.length() << std::endl;
-    std::lock_guard<std::mutex> lock(mtx);
+    //std::lock_guard<std::mutex> lock(mtx);
 
     StompProtocol::Frame msg = parseFrame(frame);
     std::cout << "[DEBUG] prossesFrame: Parsed type: " << msg.type << std::endl;

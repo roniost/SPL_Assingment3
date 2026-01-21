@@ -121,12 +121,18 @@ int main(int argc, char *argv[]) {
             }
             else if (args[0] == "report") {
                 std::cout << "[DEBUG] Generating report from file: " << args[1] << std::endl;
-                std::string report = protocol.Report(args[1]);
-                if(report == "" || !connection.sendFrameAscii(report, '\0')) {
-                    std::cout << "Disconnected. Exiting...\n";
-                    protocol.setTerminate(true);
-                    reciver.join();
-                    return 0;
+                std::vector<std::string> reports = protocol.Report(args[1]);
+                for (std::string report : reports) {
+                    if (protocol.getTerminate() || !protocol.getConnected()) {
+                        std::cout << "[DEBUG] Connection lost or Error received. Stopping report." << std::endl;
+                        break; 
+                    }
+                    if(!connection.sendFrameAscii(report, '\0')) {
+                        std::cout << "Disconnected. Exiting...\n";
+                        protocol.setTerminate(true);
+                        reciver.join();
+                        return 0;
+                    }
                 }
                 if(protocol.getTerminate()) break;
                 continue;

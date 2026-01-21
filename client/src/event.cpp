@@ -77,23 +77,23 @@ bool Event::operator<(const Event& other) const{
 // to string for report
 std::string Event::toString() const{
     std::string out = "";
-    out.append("team a: " + this->get_team_a_name() + "\n");
-    out.append("team b: " + this->get_team_b_name() + "\n");
-    out.append("event name: " + this->get_name() + "\n");
-    out.append("time: " + std::to_string(this->get_time()) + "\n");
+    out.append("team a:" + this->get_team_a_name() + "\n");
+    out.append("team b:" + this->get_team_b_name() + "\n");
+    out.append("event name:" + this->get_name() + "\n");
+    out.append("time:" + std::to_string(this->get_time()) + "\n");
     out.append("general game updates:\n");
     for(auto pair : this->get_game_updates()) {
-        out.append("    " + pair.first + ": " + pair.second + "\n");
+        out.append("    " + pair.first + ":" + pair.second + "\n");
     }
     out.append("team a updates:\n");
     for(auto pair : this->get_team_a_updates()) {
-        out.append("    " + pair.first + ": " + pair.second + "\n");
+        out.append("    " + pair.first + ":" + pair.second + "\n");
     }
     out.append("team b updates:\n");
     for(auto pair : this->get_team_b_updates()) {
-        out.append("    " + pair.first + ": " + pair.second + "\n");
+        out.append("    " + pair.first + ":" + pair.second + "\n");
     }
-    out.append("description: " + this->get_discription() + "\n");
+    out.append("description:\n" + this->get_discription() + "\n");
     return out;
 }
 
