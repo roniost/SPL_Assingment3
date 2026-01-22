@@ -38,9 +38,6 @@ public class ConnectionsImpl<T>implements Connections<T> {
                     handler.send((T) modifiedMsg);
                     //send( (int)connectionID, (T) modifiedMsg); //why vs code is stupid
                 }
-                else{
-                    disconnect(connectionID);
-                }
             }
         }
     }
@@ -64,6 +61,12 @@ public class ConnectionsImpl<T>implements Connections<T> {
         }
     }
 
+    @Override
+    public boolean isSubscribed(int connectionId, String channel) {
+        ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
+        return subscribers != null && subscribers.containsKey(connectionId);
+    }
+
     //helper methods
     public void addConnection(int connectionId, ConnectionHandler<T> handler) { 
         System.out.println("DEBUG CONNECTIONS: Adding connection ID: " + connectionId);
@@ -80,10 +83,10 @@ public class ConnectionsImpl<T>implements Connections<T> {
         
         //clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
         System.out.println("DEBUG: ID " + connectionId + " Subscribed to " + channel + " (SubID: " + subscriptionId + ")");
-        /*
+        
         clientSubscriptions.putIfAbsent(connectionId, new ConcurrentHashMap<>());
         clientSubscriptions.get(connectionId).put(subscriptionId, channel);  
-        */  
+        
     }
 
     public void unsubscribe(int subscriptionId, int connectionId) {

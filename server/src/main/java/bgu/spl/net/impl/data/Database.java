@@ -178,7 +178,17 @@
 		 * @param filename Name of the file
 		 * @param gameChannel Game channel the file was reported to
 		 */
-		public void trackFileUpload(String username, String filename, String gameChannel) {
+		public void trackFileUpload(String username, String filename) { //, String gameChannel
+			String sql = String.format(
+				"INSERT INTO files (username, filename, upload_time) " +
+				"VALUES ('%s', '%s', datetime('now'))",
+				escapeSql(username), escapeSql(filename) //escapeSql(gameChannel)
+			);
+			executeSQL(sql);
+		}
+
+		// Same but with game channel that we ignore
+		public void trackFileUpload(String username, String filename,String gameChannel) {
 			String sql = String.format(
 				"INSERT INTO files (username, filename, upload_time) " +
 				"VALUES ('%s', '%s', datetime('now'))",

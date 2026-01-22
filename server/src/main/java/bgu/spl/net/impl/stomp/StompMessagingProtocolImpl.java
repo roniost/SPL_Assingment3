@@ -165,10 +165,19 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private void handleSend(Frame frame) {
         verifyLoggedIn();
         String destination = frame.headers.get("destination");
+        String filename = frame.headers.get("filename");
 
         if (destination==null) {
             sendError("Missing headers", "SEND frame must include destination");
             return;
+        }
+
+        if (!connections.isSubscribed(connectionID, destination)) {
+            sendError("Not subscribed", "You cannot send messages to " + destination + " without subscribing first.");
+            return;
+        }
+        if (filename!=null) {
+            bgu.spl.net.impl.data.Database.getInstance().trackFileUpload(currentUser, filename);            
         }
 
         String body = frame.body;
@@ -186,10 +195,11 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     
     private void handleDisconnect(Frame frame) {
         verifyLoggedIn();
-        System.out.println("DEBUG PROTOCOL: handling recipt");
-        handleReceipt(frame);
-        System.out.println("DEBUG PROTOCOL: removing user");
+        System.out.println("DEBUG PROTOCOL: loggin out of dv");
         Database.getInstance().logout(connectionID);
+        
+        System.out.println("DEBUG PROTOCOL: recipt handling");
+        handleReceipt(frame);
         //activeUsers.remove(currentUser);
         shouldTerminate = true;
         System.out.println("DEBUG PROTOCOL: desconnecting from connections");
@@ -214,11 +224,13 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                             "message:" + message + "\n" +
                             "\n" +
                             details + "\n" + "\u0000";
-        connections.send(connectionID, errorFrame);
-        shouldTerminate = true;
+
         if (currentUser != null) {
             Database.getInstance().logout(connectionID);
-        }
+            currentUser = null;
+        }                    
+        connections.send(connectionID, errorFrame);
+        shouldTerminate = true;
         connections.disconnect(connectionID);
     }
     
