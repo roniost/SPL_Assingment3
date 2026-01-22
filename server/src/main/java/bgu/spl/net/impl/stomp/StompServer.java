@@ -36,49 +36,5 @@ public class StompServer {
         else {
             System.out.println("Unknown server type: " + serverType);
         }
-        
-        /* 
-        System.out.println("Starting server " +serverType  + " on port:" + port);
-        Supplier protocolFactory = () -> new StompMessagingProtocolImpl();
-        Supplier encoderFactory = () -> new StompMessageEncoderDecoder();
-        //Supplier<MessagingProtocol<String>> protocolFactory = () -> new ProtocolAdapter(new StompMessagingProtocolImpl());
-        //Supplier<MessageEncoderDecoder<String>> encoderFactory = () -> new StompMessageEncoderDecoder();
-
-        if (serverType.equals("tpc")) {
-            Server.threadPerClient(port,protocolFactory,encoderFactory).serve();
-        }
-        else if (serverType.equals("reactor")) {
-            Server.reactor(
-                 Runtime.getRuntime().availableProcessors(),
-                 port,protocolFactory,encoderFactory).serve();          
-        }
-        else {
-            System.out.println("Unknown server type: " + serverType);
-        }*/
     }
-
-    //helper
-/*
-    private static class ProtocolAdapter implements MessagingProtocol<String> {
-        private final StompMessagingProtocolImpl impl;
-
-        public ProtocolAdapter(StompMessagingProtocolImpl impl) {
-            this.impl = impl;
-            }
-        
-        @Override
-        public String process(String message) {
-            impl.process(message);
-            return null;  
-        }
-
-        @Override
-        public boolean shouldTerminate() {
-            return impl.shouldTerminate();
-        }
-
-        public void start(int connectionId, Connections<String> connections) {
-            impl.start(connectionId, connections);
-        }
-    }*/
 }

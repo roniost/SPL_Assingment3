@@ -27,11 +27,9 @@
 		}
 
 	    private void initialize() {
-	        System.out.println("DEBUG DB: Loading users from SQL...");
 	        String result = executeSQL("SELECT username, password FROM users");
 		
 	        if (result.startsWith("ERROR") || result.equals("EMPTY") || result.trim().isEmpty()) {
-	            System.out.println("DEBUG DB: No users found or DB error (starting empty).");
 	            return;
 	        }
 
@@ -46,7 +44,6 @@
 	                userMap.put(username, user);
 	            }
 	        }
-	        System.out.println("DEBUG DB: Loaded " + userMap.size() + " users from SQL.");
 	    }
 
 		/**
@@ -88,7 +85,6 @@
 
 		public void addUser(User user) {
 			userMap.putIfAbsent(user.name, user);
-			//connectionsIdMap.putIfAbsent(user.getConnectionId(), user);
 		}
 
 		public LoginStatus login(int connectionId, String username, String password) {
@@ -178,11 +174,11 @@
 		 * @param filename Name of the file
 		 * @param gameChannel Game channel the file was reported to
 		 */
-		public void trackFileUpload(String username, String filename) { //, String gameChannel
+		public void trackFileUpload(String username, String filename) { 
 			String sql = String.format(
 				"INSERT INTO files (username, filename, upload_time) " +
 				"VALUES ('%s', '%s', datetime('now'))",
-				escapeSql(username), escapeSql(filename) //escapeSql(gameChannel)
+				escapeSql(username), escapeSql(filename)
 			);
 			executeSQL(sql);
 		}

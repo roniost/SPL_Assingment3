@@ -7,7 +7,6 @@ import bgu.spl.net.srv.Connections;
 import bgu.spl.net.srv.ConnectionsImpl;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 public class StompMessagingProtocolImpl implements StompMessagingProtocol<String> {
@@ -15,9 +14,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private int connectionID;
     private ConnectionsImpl<String> connections;
     private boolean shouldTerminate = false;
-
- //   private static final ConcurrentHashMap<String, String> userCredentials = new ConcurrentHashMap<>();
-//    private static final ConcurrentHashMap<String, Boolean> activeUsers = new ConcurrentHashMap<>();
 
     private String currentUser = null; //not logged in --------------------------------
 
@@ -28,8 +24,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     }
 
     @Override
-    public String process(String message) {
-        System.out.println("DEBUG PROTOCOL: Processing message:\n" + message); 
+    public String process(String message) { 
         Frame frame = parseFrame(message);
         if (frame==null) {
             sendError("Malformed frame", "Could not parse message");
@@ -106,32 +101,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                           "\u0000";
         connections.send(connectionID, response);
     }
-        /*
-        //boolean successfulLogin = connections.addConnection(connectionID, login);
-
-        if(activeUsers.containsKey(login) && activeUsers.get(login)) {
-            sendError("User already logged in", "User " + login + " is already logged in");
-            return;
-        }
-        
-        if (userCredentials.containsKey(login)) {
-            if (!userCredentials.get(login).equals(passcode)) {
-                sendError("Wrong password", "Password does not match");
-                return;
-            }
-        } else {
-            userCredentials.put(login, passcode);
-        }
-        
-        activeUsers.put(login, true);
-        currentUser = login;
-
-        String response = "CONNECTED\n" +
-                          "version:1.2\n" +
-                          "\n" + 
-                          "\u0000";
-        connections.send(connectionID, response);
-    } */
 
     private void handleSubscribe(Frame frame) {
         verifyLoggedIn();
@@ -185,7 +154,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                               "destination:" + destination + "\n" +
                               "message-id:" + java.util.UUID.randomUUID().toString() + "\n" +
                               "subscription:0\n" +
-                              // "subscription:???" -> This is the hard part with generic broadcast
                               "\n" + 
                               body + "\u0000";
         
@@ -195,14 +163,9 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     
     private void handleDisconnect(Frame frame) {
         verifyLoggedIn();
-        System.out.println("DEBUG PROTOCOL: loggin out of dv");
         Database.getInstance().logout(connectionID);
-        
-        System.out.println("DEBUG PROTOCOL: recipt handling");
         handleReceipt(frame);
-        //activeUsers.remove(currentUser);
         shouldTerminate = true;
-        System.out.println("DEBUG PROTOCOL: desconnecting from connections");
         connections.disconnect(connectionID);
     } 
 
@@ -214,7 +177,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                                 "receipt-id:" + receiptId + "\n" + 
                                 "\n"
                                 + "\u0000";
-            System.out.println("DEBUG PROTOCOL: sending responce: " + response);
             connections.send(connectionID,   response);
         }
     }

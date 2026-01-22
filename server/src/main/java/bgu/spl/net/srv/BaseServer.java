@@ -40,20 +40,11 @@ public abstract class BaseServer<T> implements Server<T> {
             while (!Thread.currentThread().isInterrupted()) {
 
                 Socket clientSock = serverSock.accept();
-                System.out.println("DEBUG 1: Client accepted via TCP");
 
                 int currentId = connectionIdCounter++; // ADDED
-                //MessagingProtocol<T> protocol = protocolFactory.get();// ADDED
                 StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocolFactory.get(); // ADDED
-                //if (protocol instanceof StompMessagingProtocol) {
-                //    StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol;
-                    connectionIdCounter++; // ADDED
-                    stompProtocol.start(currentId, connections); // ADDED
-                    
-                //}
-                //protocol.start(connectionIdCounter, connections); // ADDED
-                //StompMessagingProtocol<T> stompProtocol = (StompMessagingProtocol<T>) protocol; // ADDED
-
+                connectionIdCounter++; // ADDED
+                stompProtocol.start(currentId, connections); // ADDED
                 MessagingProtocol<T> adapter = new MessagingProtocol<T>() {
                     @Override
                     public T process(T message) {
@@ -70,15 +61,10 @@ public abstract class BaseServer<T> implements Server<T> {
                         clientSock,
                         encdecFactory.get(),
                         adapter); // CHANGED
-                System.out.println("DEBUG 2: Handler created");
 
                 connections.addConnection(currentId, handler); // ADDED
-                System.out.println("DEBUG 3: Before protocol start");
-                //stompProtocol.start(connectionId, connections); // ADDED
-                System.out.println("DEBUG 4: After protocol start");
 
                 execute(handler);
-                System.out.println("DEBUG 5: Execute called");
             }
         } catch (IOException ex) {
             ex.printStackTrace();

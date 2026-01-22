@@ -12,19 +12,15 @@ public class ConnectionsImpl<T>implements Connections<T> {
 
     @Override
     public boolean send(int connectionId, T msg) {
-        System.out.println("DEBUG CONNECTIONS: Attempting to send to ID: " + connectionId);
         ConnectionHandler<T> handler = activeConnections.get(connectionId);
         if (handler != null) {
-            System.out.println("DEBUG CONNECTIONS: Found handler for ID: " + connectionId + ", sending message.");
             handler.send(msg);
             return true;
         }
-        System.out.println("DEBUG CONNECTIONS: No handler found for ID: " + connectionId + ", message not sent.");
         return false;
     }
 
     @Override
-    //netanel did differently. 
     public void send(String channel, T msg) {
         ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
         if (subscribers!=null) {    
@@ -36,7 +32,6 @@ public class ConnectionsImpl<T>implements Connections<T> {
                     String originalMsg = (String) msg;
                     String modifiedMsg = originalMsg.replace("subscription:0", "subscription:" + subscriptionId);
                     handler.send((T) modifiedMsg);
-                    //send( (int)connectionID, (T) modifiedMsg); //why vs code is stupid
                 }
             }
         }
@@ -44,14 +39,10 @@ public class ConnectionsImpl<T>implements Connections<T> {
 
     @Override
     public void disconnect(int connectionId) {
-        System.out.println("DEBUG CONNECTIONS: Disconnecting connection ID: " + connectionId);
         activeConnections.remove(connectionId); //remove active
 
-        System.out.println("DEBUG CONNECTIONS: removing subscriptions");
         ConcurrentHashMap<Integer, String> subscriptions = clientSubscriptions.remove(connectionId);
-        System.out.println("debug dubdv" + subscriptions);
         if (subscriptions != null) {
-            System.out.println("DEBUG CONNECTIONS: found subscriptions");
             for (String channel : subscriptions.values()) {
                 ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers!=null) {
@@ -69,28 +60,20 @@ public class ConnectionsImpl<T>implements Connections<T> {
 
     //helper methods
     public void addConnection(int connectionId, ConnectionHandler<T> handler) { 
-        System.out.println("DEBUG CONNECTIONS: Adding connection ID: " + connectionId);
         activeConnections.put(connectionId, handler);
     }
 
-    //needed???
     public void subscribe(int connectionId, String channel, int subscriptionId) {
-        //channelSubscribers.computeIfAbsent(channel, k -> new ConcurrentHashMap<>()).put(connectionId, subscriptionId);
-        //clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
-        
+
         channelSubscribers.putIfAbsent(channel, new ConcurrentHashMap<>());
         channelSubscribers.get(channel).put(connectionId, subscriptionId);  
-        
-        //clientSubscriptions.computeIfAbsent(connectionId, k -> new ConcurrentHashMap<>()).put(subscriptionId, channel);
-        System.out.println("DEBUG: ID " + connectionId + " Subscribed to " + channel + " (SubID: " + subscriptionId + ")");
-        
+                
         clientSubscriptions.putIfAbsent(connectionId, new ConcurrentHashMap<>());
         clientSubscriptions.get(connectionId).put(subscriptionId, channel);  
         
     }
 
     public void unsubscribe(int subscriptionId, int connectionId) {
-        System.out.println("DEBUG: Unsubscribe requested for ConnID: " + connectionId + ", SubID: " + subscriptionId);
         ConcurrentHashMap<Integer, String> userSubs = clientSubscriptions.get(connectionId);
         if (userSubs != null) {
             String channel = userSubs.remove(subscriptionId);
@@ -98,12 +81,7 @@ public class ConnectionsImpl<T>implements Connections<T> {
                 ConcurrentHashMap<Integer, Integer> subscribers = channelSubscribers.get(channel);
                 if (subscribers != null) {
                     subscribers.remove(connectionId);
-                    System.out.println("DEBUG: SUCCESS! Removed ConnID " + connectionId + " from channel " + channel);
                 }
-                else {
-                    System.out.println("DEBUG: FAILURE! Channel not found for SubID: " + subscriptionId);                }
-            } else{
-                System.out.println("DEBUG: FAILURE! No subscriptions map found for ConnID: " + connectionId);
             }
         }
     }
