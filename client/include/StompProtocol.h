@@ -80,10 +80,7 @@ public:
 
     // geters / setters
     bool getConnected() {return isConnected;}
-    bool isSubTo(std::string gameName);
-    bool isSubTo(int subId);
     int gameToSubID(std::string gameName) {std::lock_guard<std::mutex> lock(mtx); return gameToSubId[gameName];}
-    //bool getAction(int reciptId);
     int getNewSubID() {return ++subIDCounter;}
     int getNewReciptID() {return ++reciptIDCounter;}
     bool getTerminate() {return shouldTerminate;}
